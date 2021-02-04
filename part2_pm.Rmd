@@ -1,0 +1,29 @@
+---
+title: 'Part 2: Spatial data wrangling, visualization, and a variogram'
+author: "Peyton Moore"
+date: "2/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#installing packages
+library(tidyverse)
+library(sf)
+library(janitor)
+library(dplyr)
+library(here)
+```
+
+
+```{r}
+ca_counties <- read_sf(here("data", "ca_counties", "CA_Counties_TIGER2016.shp"))
+
+
+ca_subset <- ca_counties %>% 
+  select(NAME, ALAND)
+```
+

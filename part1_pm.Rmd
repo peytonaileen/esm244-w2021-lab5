@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tsibble)
 library(feasts)
-#library(fable)
+library(fable)
 ```
 
 
@@ -101,7 +101,48 @@ energy_fit <- energy_ts %>%
   model(
     ets = ETS(res_total ~ season("M"))
   )
+
+# forecast using the model 10 years into the future: 
+energy_forecast <- energy_fit %>% 
+  forecast(h = "10 years")
+
+energy_forecast %>% 
+  autoplot()
+
+
+# or plot it added to the original data: 
+energy_forecast %>% 
+  autoplot(energy_ts)
+```
+### Assessing residuals 
+
+```{r}
+#Append the predicted values (and residuals) to original energy data 
+energy_predicted <- broom::augment(energy_fit)
+
+#Use View(energy_predicted) to see the resulting data frame
+
+
 ```
 
+Now plot the actual energy values(res_total), and the predicted values (stored as .fitted) atop them:
+
+```{r}
+ggplot(data = energy_predicted)+
+  geom_line(aes(x = date, y = res_total))+
+  geom_line(aes(x = date, y = .fitted), color = "red")
+```
+
+lets explore residuals 
+things to remember, residuals should be:
+- uncorrelated
+- centered at 0 
+- normally distributed
+
+```{r}
+ggplot(data = energy_predicted, aes(x = .resid))+
+  geom_histogram()
+```
+Looks normally distributed and centered at 0
 
 
