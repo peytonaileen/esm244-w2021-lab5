@@ -1,0 +1,107 @@
+---
+title: 'Part 1: Time series wrangling & forecasting'
+author: "Peyton Moore"
+date: "2/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, PACKAGES}
+library(tidyverse)
+library(tsibble)
+library(feasts)
+#library(fable)
+```
+
+
+
+```{r, READ IN DATA}
+energy <- read_csv(here::here("data", "energy.csv"))
+
+
+# some exploration
+
+# ggplot(data = energy, aes(x = res_total, y = month))+
+#   geom_point()
+
+#bleck
+```
+
+
+
+```{r}
+energy_ts <-  energy %>% 
+  mutate(date = tsibble::yearmonth(month)) %>% 
+  as_tsibble(key = NULL, index = date)
+
+# now lets explore more 
+# ggplot(data = energy_ts, aes(x = date, 
+#                              y= res_total))+
+#   geom_line()+
+#   labs(y = "Residential energy consumption \n (Trillion BTU)")
+# 
+# # strong seasonality 
+# # maybe an increasing trend
+# 
+# 
+# ggplot(data = energy_ts, aes(x = date, y= ind_total))+
+#   geom_line()+
+#   labs(y = "Residential energy consumption \n (Trillion BTU)")
+# # less clear, maybe seasonality... maybe cyclical? 
+
+
+energy_ts %>% 
+  gg_season(y = res_total)+
+  theme_minimal()+
+  labs(x = "month", 
+       y = "residential energy consumption (trillion BTU)")
+
+```
+
+Key takeaways from season plots: 
+- Highest residential energy consumption in December
+- Another high point in July and August
+- Low points in consumption in June and September
+- There appears to be a trend in which energy consumption is increasing overtime 
+
+
+```{r}
+energy_ts %>%  
+  gg_subseries(res_total)
+```
+
+
+```{r}
+# Find STL decomposition
+dcmp <- energy_ts %>% 
+  model(STL(res_total~ season()))
+
+#View the components
+components(dcmp) %>% autoplot()+
+  theme_minimal()
+
+```
+
+
+```{r}
+energy_ts %>% 
+  ACF(res_total) %>% 
+  autoplot()
+```
+
+Observations separated by 12 months are the most highly correlated with one another 
+reflects the strong seasonality we've already seen 
+
+```{r}
+energy_fit <- energy_ts %>% 
+  model(
+    ets = ETS(res_total ~ season("M"))
+  )
+```
+
+
+
